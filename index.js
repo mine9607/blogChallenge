@@ -2,6 +2,8 @@ import express from "express";
 import bodyParser from "body-parser";
 import axios from "axios";
 import ejs from "ejs";
+import _ from "lodash";
+import { title } from "process";
 
 const homeStartingContent =
   "Lacus vel facilisis volutpat est velit egestas dui id ornare. Semper auctor neque vitae tempus quam. Sit amet cursus sit amet dictum sit amet justo. Viverra tellus in hac habitasse. Imperdiet proin fermentum leo vel orci porta. Donec ultrices tincidunt arcu non sodales neque sodales ut. Mattis molestie a iaculis at erat pellentesque adipiscing. Magnis dis parturient montes nascetur ridiculus mus mauris vitae ultricies. Adipiscing elit ut aliquam purus sit amet luctus venenatis lectus. Ultrices vitae auctor eu augue ut lectus arcu bibendum at. Odio euismod lacinia at quis risus sed vulputate odio ut. Cursus mattis molestie a iaculis at erat pellentesque adipiscing.";
@@ -42,6 +44,23 @@ app.post("/compose", (req, res) => {
   posts.push(post);
   res.redirect("/");
 });
+
+app.get("/posts/:postID", (req, res) => {
+  const postID = req.params.postID;
+  posts.forEach(function (post) {
+    if (_.lowerCase(post.title) === _.lowerCase(postID)) {
+      res.render("post.ejs", { title: post.title, content: post.text });
+    }
+  });
+});
+
+// function searchPosts(postID) {
+//   posts.forEach(function (post) {
+//     if (_.lowerCase(post.title) === _.lowerCase(postID)) {
+//       res.render("post.ejs", { title: post.title, content: post.text });
+//     }
+//   });
+// }
 
 app.listen(port, () => {
   console.log(`Server is listening on port: ${port}`);
