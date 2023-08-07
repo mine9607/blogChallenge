@@ -18,8 +18,7 @@ app.use(express.static("public"));
 app.use(bodyParser.urlencoded({ extended: true }));
 
 //Connect to a local mongodb server
-await mongoose.connect("mongodb://localhost:27017/blogsDB");
-
+await mongoose.connect("mongodb+srv://crunchySumo6960:Test-123@cluster0.vwk3y8s.mongodb.net/blogsDB");
 const Schema = mongoose.Schema;
 
 //create a post Schema
