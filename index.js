@@ -1,9 +1,8 @@
 import express from "express";
 import bodyParser from "body-parser";
-import axios from "axios";
 import ejs from "ejs";
 import _ from "lodash";
-import { title } from "process";
+import mongoose from "mongoose";
 
 const homeStartingContent =
   "Lacus vel facilisis volutpat est velit egestas dui id ornare. Semper auctor neque vitae tempus quam. Sit amet cursus sit amet dictum sit amet justo. Viverra tellus in hac habitasse. Imperdiet proin fermentum leo vel orci porta. Donec ultrices tincidunt arcu non sodales neque sodales ut. Mattis molestie a iaculis at erat pellentesque adipiscing. Magnis dis parturient montes nascetur ridiculus mus mauris vitae ultricies. Adipiscing elit ut aliquam purus sit amet luctus venenatis lectus. Ultrices vitae auctor eu augue ut lectus arcu bibendum at. Odio euismod lacinia at quis risus sed vulputate odio ut. Cursus mattis molestie a iaculis at erat pellentesque adipiscing.";
@@ -14,14 +13,37 @@ const contactContent =
 
 const app = express();
 const port = 3000;
-const posts = [];
 
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.get("/", (req, res) => {
+//Connect to a local mongodb server
+await mongoose.connect("mongodb://localhost:27017/blogsDB");
+
+const Schema = mongoose.Schema;
+
+//create a post Schema
+const postSchema = new Schema({
+  title: String,
+  content: String,
+});
+
+//create mongoose model within a collection named "Posts"
+const PostModel = mongoose.model("Post", postSchema);
+
+const defaultPost = new PostModel({
+  title: "Post Title",
+  content: homeStartingContent,
+});
+
+app.get("/", async (req, res) => {
+  //console.log("Finding All Posts");
   const title = "Home";
-  res.render("index.ejs", { title: title, content: homeStartingContent, posts: posts });
+
+  const foundPosts = await PostModel.find({});
+
+  //Send the "title", "content", and posts array to the index.ejs partial to render the list of posts
+  res.render("index.ejs", { title: title, content: homeStartingContent, posts: foundPosts });
 });
 
 app.get("/about", (req, res) => {
@@ -39,28 +61,24 @@ app.get("/compose", (req, res) => {
   res.render("compose.ejs", { title: title });
 });
 
-app.post("/compose", (req, res) => {
-  const post = { title: req.body.blogTitle, text: req.body.blogText };
-  posts.push(post);
+app.post("/compose", async (req, res) => {
+  //const post = { title: req.body.blogTitle, text: req.body.blogText };
+  const post = new PostModel({
+    title: req.body.blogTitle,
+    content: req.body.blogText,
+  });
+  //save post to the post collection on the blogsDB on local MongoDB server
+  await post.save();
+
   res.redirect("/");
 });
 
-app.get("/posts/:postID", (req, res) => {
+app.get("/posts/:postID", async (req, res) => {
   const postID = req.params.postID;
-  posts.forEach(function (post) {
-    if (_.lowerCase(post.title) === _.lowerCase(postID)) {
-      res.render("post.ejs", { title: post.title, content: post.text });
-    }
-  });
-});
+  const foundPosts = await PostModel.findById({ _id: postID });
 
-// function searchPosts(postID) {
-//   posts.forEach(function (post) {
-//     if (_.lowerCase(post.title) === _.lowerCase(postID)) {
-//       res.render("post.ejs", { title: post.title, content: post.text });
-//     }
-//   });
-// }
+  res.render("post.ejs", { title: foundPosts.title, content: foundPosts.content, posts: foundPosts });
+});
 
 app.listen(port, () => {
   console.log(`Server is listening on port: ${port}`);
